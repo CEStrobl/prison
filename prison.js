@@ -3,6 +3,9 @@ let maxOpened = num/2
 
 let mode = "text"
 
+let success = 0
+let runthroughs = 0
+
 function narrate(text) {
     if(mode === "text"){
         narrate = console.log
@@ -46,11 +49,14 @@ function shuffle(array) {
     return array;
 }
 
-
-
 let prisoners = []
-
+let boxNames = []
 let names = []
+let boxes = []
+let numbers = []
+
+function initSetUp(){
+    
 // set names to make into objects
 for (let i = 0; i < num; i++) {
     names.push("prisoner"+i)
@@ -66,13 +72,13 @@ for (let i = 0; i < names.length; i++) {
     prisoners.push(names[i])
 }
 
-let boxNames = []
+
 // set boxes to make into objects
 for (let i = 0; i < num; i++) {
     boxNames.push("box"+i)
 }
 
-let boxes = []
+
 // turn boxes into objects and give them name, content, opened
 for (let i = 0; i < num; i++) {
     boxNames[i] = new Object();
@@ -86,7 +92,7 @@ for (let i = 0; i < num; i++) {
 
 // randomize box numbers
 
-let numbers = []
+
 // start with array of numbers from 1 - max
 for (let i = 1; i <= num; i++) {
     numbers.push(i)
@@ -98,6 +104,16 @@ for (let i = 0; i < boxes.length; i++) {
     const box = boxes[i];
     box.content = numbers[i]
 }
+}
+
+function clearAll(){
+    prisoners = []
+    boxNames = []
+    names = []
+    boxes = []
+    numbers = []
+}
+
 
 // =============================================
 
@@ -158,9 +174,11 @@ function method1(){
 
     narrate("  ===  Total Ids Found ", foundIds, " out of ", num, " prisoners", "  ===  ")
     results.push(foundIds)
+    if(foundIds === num) {
+        success++
+    }
+    runthroughs++
 }
-
-
 
 // method 2: go to the box that the content tells you to. 
 function method2(){
@@ -214,9 +232,134 @@ function method2(){
 
     narrate("  ===  Total Ids Found ", foundIds, " out of ", num, " prisoners", "  ===  ")
     results.push(foundIds)
+    if(foundIds === num) {
+        success++
+    }
+    runthroughs++
 }
 
-method2()
+// method 3: method 2 but you start with your number's box 
+// instead of a random box
+function method3(){
+
+    let foundIds = 0
+
+    for (let i = 0; i < prisoners.length; i++) {
+        const prisoner = prisoners[i];
+
+        narrate(">> It's ", prisoner.name, "'s turn.")
+
+        let firstBox = boxes[prisoner.id-1]
+
+        firstBox.opened = true
+        prisoner.opened++
+        narrate("     ", firstBox.name,"had", firstBox.content, "inside.")
+
+        let target = firstBox.content
+        for (let o = 0; o < maxOpened; o++) {
+
+            let box = boxes[target-1]
+
+            box.opened = true
+            prisoner.opened++
+            narrate("     ", box.name,"had", box.content, "inside.")
+
+            if (box.content === prisoner.id) {
+                narrate("     ", box.content, "matches the prisoner's id ", prisoner.id)
+                narrate("     Because of that, moving on to the next prisoner.")
+                narrate("     ")
+                narrate("     ")
+                prisoner.found = true
+                foundIds++
+                o = num*10
+                break
+            } else if(prisoner.opened === maxOpened) {
+                narrate("     ")
+                narrate("     Reached max boxes opened. Moving on.")
+                narrate("     ")
+                o = num*10
+                break
+            }
+
+            target = box.content
+            
+        }
+
+        closeAllBoxes()
+
+    }
+
+    narrate("  ===  Total Ids Found ", foundIds, " out of ", num, " prisoners", "  ===  ")
+    if(foundIds === num) {
+        success++
+    }
+    runthroughs++
+    results.push(foundIds)
+}
+
+// method 4: method 3 but cleaner
+function method4(){
+
+    let foundIds = 0
+
+    for (let i = 0; i < prisoners.length; i++) {
+        const prisoner = prisoners[i];
+
+        narrate(">> It's ", prisoner.name, "'s turn.")
+
+        let firstBox = boxes[prisoner.id-1]
+
+        firstBox.opened = true
+        prisoner.opened++
+        narrate("     ", firstBox.name,"had", firstBox.content, "inside.")
+
+        let displayString = []
+
+        let target = firstBox.content
+        for (let o = 0; o < maxOpened; o++) {
+
+            let box = boxes[target-1]
+
+            box.opened = true
+            prisoner.opened++
+            displayString.push(" "+box.content)
+
+            if (box.content === prisoner.id) {
+                displayString.push(" "+box.content, " matches the prisoner's id", " "+prisoner.id)
+                displayString.push(" Because of that, moving on to the next prisoner.")
+                let string = displayString.toString()
+                narrate(string)
+                narrate("     ")
+                narrate("     ")
+                prisoner.found = true
+                foundIds++
+                o = num*10
+                break
+            } else if(prisoner.opened === maxOpened) {
+                narrate("     ")
+                displayString.push(" Because of that, moving on to the next prisoner.")
+                let string = displayString.toString()
+                narrate(string)
+                narrate("     ")
+                o = num*10
+                break
+            }
+
+            target = box.content
+            
+        }
+
+        closeAllBoxes()
+
+    }
+
+    narrate("  ===  Total Ids Found ", foundIds, " out of ", num, " prisoners", "  ===  ")
+    if(foundIds === num) {
+        success++
+    }
+    runthroughs++
+    results.push(foundIds)
+}
 
 
 function findTheAverage(array){
@@ -229,16 +372,21 @@ function findTheAverage(array){
     return sum
 }
 
-
-let runtime = 10000
+let runtime = 1
 
 for (let i = 0; i < runtime; i++) {
-    silence()
-    method2()
+    initSetUp()
+    closeAllBoxes()
+    unsilence()
+    method4()
+
 }
 unsilence()
 narrate("     ")
 narrate("     ")
 narrate("  ===  Average IDs found", findTheAverage(results), "  ===  ")
-
-
+narrate("     ")
+narrate("  ===  ", success, "Success out of", runthroughs, " runthroughs. ===  ")
+narrate("     ")
+narrate("     ")
+narrate("     ")
